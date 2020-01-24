@@ -1,0 +1,105 @@
+---
+title: "DataAnalysis"
+author: "Hana Thompson"
+date: '2020-01-24'
+output: html_document
+---
+
+### Analysis of limb measurements dataset created in DataGeneration.Rmd
+
+1. Load required packages
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+2. Load datafile
+```{r}
+MData <- read.csv("Data/measurements.csv")
+```
+
+3. For efficency, I changed the column names to shorter, 3-letter abbreviations
+```{r}
+MData <- MData %>% rename(SPS = Species, LWD = Limb.Width, UNW = unitsW, LLN = Limb.Length, UNL = unitsL)
+```
+
+4. I added a new data column called Volume that calculates limb volume. 
+ * First I have to make sure everything is in the same units by creating a loop to convert mm into cm
+```{r}
+n <- length(MData$LWD)
+for(i in 1:n){
+  if(MData$UNW[i] == "mm"){
+    MData$LWD[i] <-  MData$LWD[i]/10
+    MData$UNW[i] <- "cm"
+  }
+  if(MData$UNL[i] == "mm"){
+    MData$LLN[i] <- MData$LWD[i]/10
+    MData$UNL[i] <- "cm"
+  }
+}
+```
+* Now I can make a new column for limb volume with units mm^3
+* I multiplied Length x Width x Width to get a measure of volume
+```{r}
+MData <- MData %>% mutate(Volume = LWD*LWD*LLN)
+```
+
+5. I created a new vector assigning each species to one of two groups
+ * birds that ate while at the bird feeder (BF)
+ * birds that took their seed to eat away from the bird feeder (A)
+```{r}
+feeder <- sample(c("BF", "A"), 10, replace = T, prob = c(0.5, 0.5))
+MData <- MData %>% mutate(EAT = feeder)
+```
+
+6. I created a table of the mean and standard deviation of length, width, and volume for each group
+```{r}
+MData %>% group_by(EAT) %>% summarise(mean_L = mean(LLN), sd_L = sd(LLN),
+                    mean_W = mean(LWD), sd_W = sd(LWD),
+                    mean_V = mean(Volume), sd_V = sd(Volume))
+```
+
+7. A plot of limb width and length, with each feeding behvaiour group represented by different colours. 
+```{r}
+ggplot(MData, aes(x = LWD, y = LLN, colour = EAT)) +
+  geom_point(size = 4) +
+  theme_classic() +
+  scale_y_continuous(name = "Limb length(cm)") +
+   scale_x_continuous(name = "Limb width(cm)") +
+  scale_colour_manual(name = "Feeding behaviour", labels = c("At bird feeder", "Away from bird feeder"),
+                      values = c("mediumpurple2", "seagreen3")) +
+   theme(legend.position = "top")
+```
+
+8. A plot of limb width and length, but only for species that have above-average volume.
+ * first I created a new dataset including only the species that had limb volume above the average of all species
+```{r}
+newdat <- MData %>% filter(Volume > mean(Volume))
+```
+
+ * I then plotted limb width and length using this new dataset
+```{r}
+ggplot(newdat) +
+  geom_point(aes(x = LWD, y = LLN, colour = EAT),
+             shape = 17, size = 6) +
+  theme_classic() +
+  scale_y_continuous(name = "Limb length (cm)") +
+  scale_x_continuous(name = "Limb width(cm)") +
+  scale_colour_manual(name = "Feeding behaviour", labels = c("At bird feeder", "Away from bird feeder"),
+                      values = c("mediumpurple2", "seagreen3")) +
+  theme(legend.position = "top")
+```
+
+9. A table of Species and Volume including only the species with below-average volume
+```{r}
+MData %>% filter(Volume < mean(Volume)) %>% select(SPS, Volume)
+```
+
+
+
+
+
+
+
+
+
