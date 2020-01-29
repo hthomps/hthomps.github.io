@@ -1,0 +1,26 @@
+---
+title: "Regex"
+author: "Hana Thompson"
+date: '2020-01-29'
+output: html_document
+---
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+Import your measurements.csv file into an object called MData
+```{r}
+MData <- read.csv("Data/measurements.csv")
+```
+
+Use a dplyr command AND regular expressions to add a new column called Sp that modifies the Species names with only the first letter and period. For example: Homo sapiens in the original Species column becomes H. sapiens in the Sp column. HINT: You can think of the regular expression commands like sub, grep, grepl and gsub as equations for strings
+```{r}
+MData <- MData %>% mutate(Sp = sub("(\\w)(\\w+)", "\\1\\.", Species))
+```
+
+Use a dplyr command to create a new dataset BUT with Sp column instead of the Species column, moved to the beginning in place of the original Species column
+```{r}
+NData <- MData %>% select(Sp, everything(), -Species)
+```
+
